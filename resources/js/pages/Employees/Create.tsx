@@ -49,11 +49,12 @@ export default function Create() {
     const [statusId, setStatusId] = useState<string>('');
     const [employmentStoreId, setEmploymentStoreId] = useState<string>('');
 
-    // Dynamic collections
+    // hasMany: contacts
     const [contacts, setContacts] = useState<ContactRow[]>([
         { contact_type: 'email', contact_value: '', is_primary: true },
     ]);
 
+    // hasMany: addresses
     const [addresses, setAddresses] = useState<AddressRow[]>([
         {
             address_type: 'home',
@@ -66,7 +67,7 @@ export default function Create() {
         },
     ]);
 
-    // Tags (checkboxes)
+    // tags pivot
     const [tagIds, setTagIds] = useState<number[]>([]);
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -85,6 +86,69 @@ export default function Create() {
         setContacts((prev) =>
             prev.map((c, i) => ({ ...c, is_primary: i === idx })),
         );
+    };
+
+    const addContact = () => {
+        setContacts((prev) => [
+            ...prev,
+            {
+                contact_type: 'phone',
+                contact_value: '',
+                is_primary: prev.length === 0,
+            },
+        ]);
+    };
+
+    const removeContact = (idx: number) => {
+        setContacts((prev) => {
+            const next = prev.filter((_, i) => i !== idx);
+            // ensure at least one primary if any contacts remain
+            if (next.length && !next.some((c) => c.is_primary))
+                next[0].is_primary = true;
+            return next.length
+                ? next
+                : [
+                      {
+                          contact_type: 'email',
+                          contact_value: '',
+                          is_primary: true,
+                      },
+                  ];
+        });
+    };
+
+    const addAddress = () => {
+        setAddresses((prev) => [
+            ...prev,
+            {
+                address_type: 'home',
+                address_line1: '',
+                address_line2: '',
+                city: '',
+                state: '',
+                country: '',
+                postal_code: '',
+            },
+        ]);
+    };
+
+    const removeAddress = (idx: number) => {
+        setAddresses((prev) => {
+            const next = prev.filter((_, i) => i !== idx);
+            return next.length
+                ? next
+                : [
+                      {
+                          address_type: 'home',
+                          address_line1: '',
+                          address_line2: '',
+                          city: '',
+                          state: '',
+                          country: '',
+                          postal_code: '',
+                      },
+                  ];
+        });
     };
 
     return (
@@ -206,7 +270,6 @@ export default function Create() {
                             <div className="grid gap-4 md:grid-cols-2">
                                 <div className="space-y-2 md:col-span-2">
                                     <Label>Store</Label>
-
                                     <input
                                         type="hidden"
                                         name="employment[store_id]"
@@ -268,7 +331,607 @@ export default function Create() {
                             </div>
                         </section>
 
-                        {/* The rest of your Create file stays the same below (Demographics, Identifiers, Contacts, Addresses, Tags) */}
+                        {/* Demographics */}
+                        <section className="space-y-4">
+                            <h2 className="text-sm font-medium text-muted-foreground">
+                                Demographics
+                            </h2>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label>Date of birth</Label>
+                                    <Input
+                                        type="date"
+                                        name="demographics[date_of_birth]"
+                                    />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'demographics.date_of_birth'
+                                            ]
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Gender</Label>
+                                    <Input name="demographics[gender]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'demographics.gender'
+                                            ]
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Marital status</Label>
+                                    <Input name="demographics[marital_status]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'demographics.marital_status'
+                                            ]
+                                        }
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-2 pt-6">
+                                    <input
+                                        id="veteran"
+                                        type="checkbox"
+                                        name="demographics[veteran_status]"
+                                        value="1"
+                                    />
+                                    <Label htmlFor="veteran">Veteran</Label>
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'demographics.veteran_status'
+                                            ]
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Identifiers */}
+                        <section className="space-y-4">
+                            <h2 className="text-sm font-medium text-muted-foreground">
+                                Identifiers
+                            </h2>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="space-y-2">
+                                    <Label>SSN</Label>
+                                    <Input name="identifiers[social_security_number]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'identifiers.social_security_number'
+                                            ]
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>National ID</Label>
+                                    <Input name="identifiers[national_id_number]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'identifiers.national_id_number'
+                                            ]
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>ITIN</Label>
+                                    <Input name="identifiers[itin]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)['identifiers.itin']
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Contacts */}
+                        <section className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-medium text-muted-foreground">
+                                    Contacts
+                                </h2>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={addContact}
+                                >
+                                    Add contact
+                                </Button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {contacts.map((c, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="rounded-md border p-4"
+                                    >
+                                        {/* hidden id for edit parity (won't exist here, but harmless) */}
+                                        <input
+                                            type="hidden"
+                                            name={`contacts[${idx}][id]`}
+                                            value={c.id ?? ''}
+                                        />
+
+                                        <div className="grid gap-4 md:grid-cols-3">
+                                            <div className="space-y-2">
+                                                <Label>Type</Label>
+                                                <select
+                                                    className="w-full rounded-md border px-3 py-2 text-sm"
+                                                    value={c.contact_type}
+                                                    onChange={(e) =>
+                                                        setContacts((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          contact_type:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="email">
+                                                        email
+                                                    </option>
+                                                    <option value="phone">
+                                                        phone
+                                                    </option>
+                                                    <option value="sms">
+                                                        sms
+                                                    </option>
+                                                    <option value="other">
+                                                        other
+                                                    </option>
+                                                </select>
+
+                                                <input
+                                                    type="hidden"
+                                                    name={`contacts[${idx}][contact_type]`}
+                                                    value={c.contact_type}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `contacts.${idx}.contact_type`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2 md:col-span-2">
+                                                <Label>Value</Label>
+                                                <Input
+                                                    value={c.contact_value}
+                                                    onChange={(e) =>
+                                                        setContacts((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          contact_value:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`contacts[${idx}][contact_value]`}
+                                                    value={c.contact_value}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `contacts.${idx}.contact_value`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 flex items-center justify-between">
+                                            <label className="flex items-center gap-2 text-sm">
+                                                <input
+                                                    type="radio"
+                                                    name="__primary_contact"
+                                                    checked={c.is_primary}
+                                                    onChange={() =>
+                                                        setPrimaryContact(idx)
+                                                    }
+                                                />
+                                                Primary
+                                            </label>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    removeContact(idx)
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+
+                                        {/* actual field sent to backend */}
+                                        <input
+                                            type="hidden"
+                                            name={`contacts[${idx}][is_primary]`}
+                                            value={c.is_primary ? '1' : '0'}
+                                        />
+                                        <InputError
+                                            message={
+                                                (errors as any)[
+                                                    `contacts.${idx}.is_primary`
+                                                ]
+                                            }
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <InputError message={(errors as any)['contacts']} />
+                        </section>
+
+                        {/* Addresses */}
+                        <section className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-sm font-medium text-muted-foreground">
+                                    Addresses
+                                </h2>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={addAddress}
+                                >
+                                    Add address
+                                </Button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {addresses.map((a, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="rounded-md border p-4"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name={`addresses[${idx}][id]`}
+                                            value={a.id ?? ''}
+                                        />
+
+                                        <div className="grid gap-4 md:grid-cols-2">
+                                            <div className="space-y-2">
+                                                <Label>Type</Label>
+                                                <select
+                                                    className="w-full rounded-md border px-3 py-2 text-sm"
+                                                    value={a.address_type}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          address_type:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                >
+                                                    <option value="home">
+                                                        home
+                                                    </option>
+                                                    <option value="work">
+                                                        work
+                                                    </option>
+                                                    <option value="other">
+                                                        other
+                                                    </option>
+                                                </select>
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][address_type]`}
+                                                    value={a.address_type}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.address_type`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Address line 1</Label>
+                                                <Input
+                                                    value={a.address_line1}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          address_line1:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][address_line1]`}
+                                                    value={a.address_line1}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.address_line1`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Address line 2</Label>
+                                                <Input
+                                                    value={
+                                                        a.address_line2 ?? ''
+                                                    }
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          address_line2:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][address_line2]`}
+                                                    value={
+                                                        a.address_line2 ?? ''
+                                                    }
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.address_line2`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>City</Label>
+                                                <Input
+                                                    value={a.city ?? ''}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          city: e
+                                                                              .target
+                                                                              .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][city]`}
+                                                    value={a.city ?? ''}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.city`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>State</Label>
+                                                <Input
+                                                    value={a.state ?? ''}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          state: e
+                                                                              .target
+                                                                              .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][state]`}
+                                                    value={a.state ?? ''}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.state`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Country</Label>
+                                                <Input
+                                                    value={a.country ?? ''}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          country:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][country]`}
+                                                    value={a.country ?? ''}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.country`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label>Postal code</Label>
+                                                <Input
+                                                    value={a.postal_code ?? ''}
+                                                    onChange={(e) =>
+                                                        setAddresses((prev) =>
+                                                            prev.map((x, i) =>
+                                                                i === idx
+                                                                    ? {
+                                                                          ...x,
+                                                                          postal_code:
+                                                                              e
+                                                                                  .target
+                                                                                  .value,
+                                                                      }
+                                                                    : x,
+                                                            ),
+                                                        )
+                                                    }
+                                                />
+                                                <input
+                                                    type="hidden"
+                                                    name={`addresses[${idx}][postal_code]`}
+                                                    value={a.postal_code ?? ''}
+                                                />
+                                                <InputError
+                                                    message={
+                                                        (errors as any)[
+                                                            `addresses.${idx}.postal_code`
+                                                        ]
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 flex justify-end">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    removeAddress(idx)
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <InputError
+                                message={(errors as any)['addresses']}
+                            />
+                        </section>
+
+                        {/* Tags */}
+                        <section className="space-y-4">
+                            <h2 className="text-sm font-medium text-muted-foreground">
+                                Tags
+                            </h2>
+
+                            {/* send tag_ids[] array */}
+                            {tagIds.map((id) => (
+                                <input
+                                    key={id}
+                                    type="hidden"
+                                    name="tag_ids[]"
+                                    value={String(id)}
+                                />
+                            ))}
+
+                            <div className="grid gap-2 md:grid-cols-2">
+                                {tags.map((t) => {
+                                    const checked = tagIds.includes(t.id);
+                                    return (
+                                        <label
+                                            key={t.id}
+                                            className="flex items-center gap-2 text-sm"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={() => toggleTag(t.id)}
+                                            />
+                                            {t.tag_name}
+                                        </label>
+                                    );
+                                })}
+                            </div>
+
+                            <InputError message={(errors as any)['tag_ids']} />
+                        </section>
 
                         <div className="flex gap-2">
                             <Button type="submit" disabled={processing}>
