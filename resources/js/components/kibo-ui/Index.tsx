@@ -192,10 +192,18 @@ const Combobox = ({
 
 type OutOfBoundsDayProps = {
     day: number;
+    onDayClick?: (date: Date) => void;
+    date?: Date;
 };
 
-const OutOfBoundsDay = ({ day }: OutOfBoundsDayProps) => (
-    <div className="relative h-full w-full bg-secondary p-1 text-xs text-muted-foreground">
+const OutOfBoundsDay = ({ day, onDayClick, date }: OutOfBoundsDayProps) => (
+    <div
+        className={cn(
+            'relative h-full w-full bg-secondary p-1 text-xs text-muted-foreground',
+            onDayClick && 'cursor-pointer hover:bg-secondary/80',
+        )}
+        onClick={() => date && onDayClick?.(date)}
+    >
         {day}
     </div>
 );
@@ -203,13 +211,15 @@ const OutOfBoundsDay = ({ day }: OutOfBoundsDayProps) => (
 export type CalendarBodyProps = {
     features: Feature[];
     children: (props: { feature: Feature }) => ReactNode;
-    maxVisible?: number; // ✅ new
+    maxVisible?: number;
+    onDayClick?: (date: Date) => void; // ✅ NEW
 };
 
 export const CalendarBody = ({
     features,
     children,
-    maxVisible = 3, // ✅ default 3
+    maxVisible = 3,
+    onDayClick, // ✅ NEW
 }: CalendarBodyProps) => {
     const [month] = useCalendarMonth();
     const [year] = useCalendarYear();
@@ -238,7 +248,7 @@ export const CalendarBody = ({
             { length: prevMonthDays },
             (_, i) => i + 1,
         );
-        return { prevMonthDays, prevMonthDaysArray };
+        return { prevMonthDays, prevMonthDaysArray, prevMonth, prevMonthYear };
     }, [month, year]);
 
     const nextMonthData = useMemo(() => {
@@ -251,7 +261,7 @@ export const CalendarBody = ({
             { length: nextMonthDays },
             (_, i) => i + 1,
         );
-        return { nextMonthDaysArray };
+        return { nextMonthDaysArray, nextMonth, nextMonthYear };
     }, [month, year]);
 
     const featuresByDay = useMemo(() => {
@@ -269,27 +279,51 @@ export const CalendarBody = ({
 
     const days: ReactNode[] = [];
 
+    // Previous month days
     for (let i = 0; i < firstDay; i++) {
         const day =
             prevMonthData.prevMonthDaysArray[
                 prevMonthData.prevMonthDays - firstDay + i
             ];
-        if (day) days.push(<OutOfBoundsDay day={day} key={`prev-${i}`} />);
+        if (day) {
+            const date = new Date(
+                prevMonthData.prevMonthYear,
+                prevMonthData.prevMonth,
+                day,
+            );
+            days.push(
+                <OutOfBoundsDay
+                    day={day}
+                    key={`prev-${i}`}
+                    onDayClick={onDayClick}
+                    date={date}
+                />,
+            );
+        }
     }
 
+    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
         const featuresForDay = featuresByDay[day] || [];
         const visible = featuresForDay.slice(0, maxVisible);
         const overflow = featuresForDay.slice(maxVisible);
+        const dayDate = new Date(year, month, day); // ✅ NEW
 
         days.push(
             <div
-                className="relative flex h-full w-full flex-col gap-1 p-1 text-xs text-muted-foreground"
+                className={cn(
+                    'relative flex h-full w-full flex-col gap-1 p-1 text-xs text-muted-foreground',
+                    onDayClick &&
+                        'cursor-pointer transition-colors hover:bg-accent/50', // ✅ NEW
+                )}
                 key={day}
+                onClick={() => onDayClick?.(dayDate)} // ✅ NEW
             >
                 {day}
 
-                <div className="space-y-1">
+                <div className="space-y-1" onClick={(e) => e.stopPropagation()}>
+                    {' '}
+                    {/* ✅ UPDATED - prevent click bubbling from events */}
                     {visible.map((feature) => children({ feature }))}
                 </div>
 
@@ -299,6 +333,7 @@ export const CalendarBody = ({
                             <button
                                 type="button"
                                 className="mt-1 w-fit text-left text-[11px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                                onClick={(e) => e.stopPropagation()} // ✅ NEW - prevent day click when clicking +X more
                             >
                                 +{overflow.length} more
                             </button>
@@ -325,11 +360,26 @@ export const CalendarBody = ({
         );
     }
 
+    // Next month days
     const remainingDays = 7 - ((firstDay + daysInMonth) % 7);
     if (remainingDays < 7) {
         for (let i = 0; i < remainingDays; i++) {
             const day = nextMonthData.nextMonthDaysArray[i];
-            if (day) days.push(<OutOfBoundsDay day={day} key={`next-${i}`} />);
+            if (day) {
+                const date = new Date(
+                    nextMonthData.nextMonthYear,
+                    nextMonthData.nextMonth,
+                    day,
+                );
+                days.push(
+                    <OutOfBoundsDay
+                        day={day}
+                        key={`next-${i}`}
+                        onDayClick={onDayClick}
+                        date={date}
+                    />,
+                );
+            }
         }
     }
 
@@ -372,7 +422,6 @@ export const CalendarMonthPicker = ({
     const [month, setMonth] = useCalendarMonth();
     const { locale } = useContext(CalendarContext);
 
-    // Memoize month data to avoid recalculating date formatting
     const monthData = useMemo(() => {
         return monthsForLocale(locale).map((month, index) => ({
             value: index.toString(),
@@ -483,7 +532,6 @@ export type CalendarHeaderProps = {
 export const CalendarHeader = ({ className }: CalendarHeaderProps) => {
     const { locale, startDay } = useContext(CalendarContext);
 
-    // Memoize days data to avoid recalculating date formatting
     const daysData = useMemo(() => {
         return daysForLocale(locale, startDay);
     }, [locale, startDay]);

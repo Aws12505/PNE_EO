@@ -1,0 +1,1 @@
+import{c as o}from"./index-C90piOTk.js";import{r as c}from"./app-7ALy2TZn.js";const t=[["path",{d:"M20 6 9 17l-5-5",key:"1gmf2c"}]],n=o("Check",t);function i(r){const e=c.useRef({value:r,previous:r});return c.useMemo(()=>(e.current.value!==r&&(e.current.previous=e.current.value,e.current.value=r),e.current.previous),[r])}export{n as C,i as u};

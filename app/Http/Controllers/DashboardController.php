@@ -1,178 +1,62 @@
 <?php
+// app/Http/Controllers/DashboardController.php
 
 namespace App\Http\Controllers;
 
+use App\Models\DayNote;
 use App\Models\Employee;
+use App\Services\CalendarEventService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
+    public function __construct(private CalendarEventService $calendarService) {}
+
     public function index(Request $request)
     {
         $today = Carbon::today();
         $year = (int) $today->year;
+        $startDate = Carbon::create($year - 1, 1, 1)->startOfDay();
+        $endDate = Carbon::create($year + 1, 12, 31)->endOfDay();
 
-        $years = [$year - 1, $year, $year + 1];
+        $calendarEvents = $this->calendarService->generateEventsForDateRange($startDate, $endDate);
+        $upcomingEvents = $this->getUpcomingEvents($calendarEvents, $today);
 
-        $employees = Employee::query()
-            ->with([
-                'employment:employee_id,hiring_date',
-                'demographics:employee_id,date_of_birth',
-            ])
-            ->get([
-                'id',
-                'first_name',
-                'middle_name',
-                'last_name',
-                'preferred_name',
+        $notes = DayNote::whereBetween('note_date', [$startDate, $endDate])
+            ->with(['creator', 'updater'])
+            ->get()
+            ->keyBy(fn($n) => $n->note_date->toDateString())
+            ->map(fn($note) => [
+                'id' => $note->id,
+                'date' => $note->note_date->toDateString(),
+                'content' => $note->content,
+                'created_by' => $note->creator->name,
+                'updated_at' => $note->updated_at->toDateTimeString(),
             ]);
 
-        $calendarEvents = [];
-        $nextOccurrenceEvents = [];
-
-        foreach ($employees as $emp) {
-            $displayName = $this->employeeDisplayName($emp);
-
-            // -------------------------
-            // Birthdays
-            // -------------------------
-            $dob = optional($emp->demographics)->date_of_birth
-                ? Carbon::parse($emp->demographics->date_of_birth)
-                : null;
-
-            if ($dob) {
-                foreach ($years as $y) {
-                    $eventDate = $this->safeMonthDayInYear($dob->month, $dob->day, $y);
-
-                    $age = $y - (int) $dob->year;
-                    if ($age < 0) continue;
-
-                    $calendarEvents[] = [
-                        'id' => "birthday-{$emp->id}-{$y}",
-                        'employee_id' => $emp->id,
-                        'date' => $eventDate->toDateString(),
-                        'name' => "{$displayName} turns {$age}",
-                        'type' => 'birthday',
-                    ];
-                }
-
-                $nextBirthday = $this->nextOccurrenceFromMonthDay($dob->month, $dob->day, $today);
-                $nextAge = (int) $nextBirthday->year - (int) $dob->year;
-
-                $nextOccurrenceEvents[] = [
-                    'id' => "next-birthday-{$emp->id}",
-                    'employee_id' => $emp->id,
-                    'date' => $nextBirthday->toDateString(),
-                    'name' => "{$displayName} turns {$nextAge}",
-                    'type' => 'birthday',
-                ];
-            }
-
-            // -------------------------
-            // Hiring anniversaries
-            // -------------------------
-            $hire = optional($emp->employment)->hiring_date
-                ? Carbon::parse($emp->employment->hiring_date)
-                : null;
-
-            if ($hire) {
-                foreach ($years as $y) {
-                    if ($y < (int) $hire->year) continue;
-
-                    $eventDate = $this->safeMonthDayInYear($hire->month, $hire->day, $y);
-
-                    $yearsWithUs = $y - (int) $hire->year;
-                    if ($yearsWithUs < 0) continue;
-
-                    if ($yearsWithUs === 0 && $eventDate->isSameDay($hire)) {
-                        // skip
-                    } else {
-                        $calendarEvents[] = [
-                            'id' => "anniversary-{$emp->id}-{$y}",
-                            'employee_id' => $emp->id,
-                            'date' => $eventDate->toDateString(),
-                            'name' => "{$displayName} • {$yearsWithUs} year" . ($yearsWithUs === 1 ? '' : 's') . " with us",
-                            'type' => 'anniversary',
-                        ];
-                    }
-                }
-
-                $nextAnniversary = $this->nextOccurrenceFromMonthDay($hire->month, $hire->day, $today);
-                if ($nextAnniversary->year >= (int) $hire->year) {
-                    $yearsWithUsNext = (int) $nextAnniversary->year - (int) $hire->year;
-
-                    if ($yearsWithUsNext > 0) {
-                        $nextOccurrenceEvents[] = [
-                            'id' => "next-anniversary-{$emp->id}",
-                            'employee_id' => $emp->id,
-                            'date' => $nextAnniversary->toDateString(),
-                            'name' => "{$displayName} • {$yearsWithUsNext} year" . ($yearsWithUsNext === 1 ? '' : 's') . " with us",
-                            'type' => 'anniversary',
-                        ];
-                    }
-                }
-            }
-        }
-
-        usort($nextOccurrenceEvents, function ($a, $b) {
-            return strcmp($a['date'], $b['date']);
-        });
-
-        $within10 = array_values(array_filter($nextOccurrenceEvents, function ($e) use ($today) {
-            $d = Carbon::parse($e['date']);
-            return $d->greaterThanOrEqualTo($today) && $today->diffInDays($d) <= 10;
-        }));
-
-        $upcoming = count($within10) > 0
-            ? $within10
-            : array_slice(array_values(array_filter($nextOccurrenceEvents, function ($e) use ($today) {
-                return Carbon::parse($e['date'])->greaterThanOrEqualTo($today);
-            })), 0, 3);
+        $employees = Employee::select('id', 'first_name', 'middle_name', 'last_name', 'preferred_name')
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn($e) => [
+                'id' => $e->id,
+                'name' => trim(implode(' ', array_filter([$e->preferred_name ?: $e->first_name, $e->last_name])))
+            ]);
 
         return Inertia::render('dashboard', [
             'calendarEvents' => $calendarEvents,
-            'upcomingEvents' => $upcoming,
-            'yearWindow' => [
-                'start' => $year - 1,
-                'end' => $year + 1,
-            ],
+            'upcomingEvents' => $upcomingEvents,
+            'dayNotes' => $notes,
+            'employees' => $employees,
+            'yearWindow' => ['start' => $year - 1, 'end' => $year + 1],
         ]);
     }
 
-    private function employeeDisplayName($emp): string
+    private function getUpcomingEvents(array $events, Carbon $today): array
     {
-        $preferred = trim((string) ($emp->preferred_name ?? ''));
-        if ($preferred !== '') return $preferred;
-
-        $parts = [
-            $emp->first_name ?? null,
-            $emp->middle_name ?? null,
-            $emp->last_name ?? null,
-        ];
-
-        return trim(implode(' ', array_values(array_filter($parts))));
-    }
-
-    private function safeMonthDayInYear(int $month, int $day, int $year): Carbon
-    {
-        if ($month === 2 && $day === 29) {
-            $isLeap = Carbon::create($year, 2, 1)->isLeapYear();
-            $day = $isLeap ? 29 : 28;
-        }
-
-        return Carbon::create($year, $month, $day)->startOfDay();
-    }
-
-    private function nextOccurrenceFromMonthDay(int $month, int $day, Carbon $today): Carbon
-    {
-        $candidate = $this->safeMonthDayInYear($month, $day, (int) $today->year);
-
-        if ($candidate->lessThan($today)) {
-            $candidate = $this->safeMonthDayInYear($month, $day, (int) $today->year + 1);
-        }
-
-        return $candidate;
+        $futureEvents = array_values(array_filter($events, fn($e) => Carbon::parse($e['date'])->greaterThanOrEqualTo($today)));
+        $within10 = array_filter($futureEvents, fn($e) => $today->diffInDays(Carbon::parse($e['date'])) <= 10);
+        return count($within10) > 0 ? array_values($within10) : array_slice($futureEvents, 0, 3);
     }
 }

@@ -13,11 +13,13 @@ import {
 import { dashboard } from '@/routes';
 import employees from '@/routes/employees';
 import expenseTypes from '@/routes/expense-types';
+import milestoneTemplates from '@/routes/milestone-templates'; // ✅ ADD THIS
 import stores from '@/routes/stores';
 import tags from '@/routes/tags';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import {
+    Calendar,
     LayoutGrid,
     Receipt,
     Store,
@@ -52,6 +54,11 @@ const mainNavItems: NavItem[] = [
         title: 'Tags',
         href: tags.index(),
         icon: TagsIcon,
+    },
+    {
+        title: 'Milestone Templates',
+        href: milestoneTemplates.index(), // ✅ FIXED: Use wayfinder route
+        icon: Calendar, // ✅ FIXED: Add Calendar icon
     },
 ];
 
