@@ -150,26 +150,26 @@ class EmployeeController extends Controller
     public function destroy(Employee $employee)
     {
         DB::transaction(function () use ($employee) {
-        // many-to-many
-        $employee->tags()->detach();
+            // many-to-many
+            $employee->tags()->detach();
 
-        // hasMany
-        $employee->contacts()->delete();
-        $employee->addresses()->delete();
-        $employee->expenses()->delete();
+            // hasMany
+            $employee->contacts()->delete();
+            $employee->addresses()->delete();
+            $employee->expenses()->delete();
 
-        // hasOne
-        $employee->employment()->delete();
-        $employee->demographics()->delete();
-        $employee->identifiers()->delete();
+            // hasOne
+            $employee->employment()->delete();
+            $employee->demographics()->delete();
+            $employee->identifiers()->delete();
 
-        // finally delete employee
-        $employee->delete();
-    });
+            // finally delete employee
+            $employee->delete();
+        });
 
-    return response()->json([
-        'message' => 'Employee deleted successfully',
-    ]);
+        return response()->json([
+            'message' => 'Employee deleted successfully',
+        ]);
     }
 
     private function persistOneToOne(Employee $employee, array $data, bool $isUpdate = false): void
@@ -219,6 +219,7 @@ class EmployeeController extends Controller
                 'social_security_number' => $payload['social_security_number'] ?? null,
                 'national_id_number' => $payload['national_id_number'] ?? null,
                 'itin' => $payload['itin'] ?? null,
+                'paychex_id' => $payload['paychex_id'] ?? null,
             ];
 
             if ($this->hasAnyFilled($payload)) {
@@ -247,7 +248,7 @@ class EmployeeController extends Controller
                 $payload = [
                     'contact_type' => $item['contact_type'] ?? null,
                     'contact_value' => $item['contact_value'] ?? null,
-                    'is_primary' => (bool)($item['is_primary'] ?? false),
+                    'is_primary' => (bool) ($item['is_primary'] ?? false),
                 ];
 
                 if (!empty($item['id'])) {
@@ -327,10 +328,12 @@ class EmployeeController extends Controller
     private function hasAnyFilled(array $payload): bool
     {
         foreach ($payload as $k => $v) {
-            if ($k === 'id') continue;
+            if ($k === 'id')
+                continue;
 
             if (is_bool($v)) {
-                if ($v === true) return true;
+                if ($v === true)
+                    return true;
                 continue;
             }
 
@@ -342,7 +345,8 @@ class EmployeeController extends Controller
                 return true;
             }
 
-            if ($v !== null && $v !== '') return true;
+            if ($v !== null && $v !== '')
+                return true;
         }
 
         return false;
