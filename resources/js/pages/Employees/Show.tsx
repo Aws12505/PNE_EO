@@ -71,6 +71,7 @@ type EmployeeIdentifiers = {
     social_security_number?: string | null;
     national_id_number?: string | null;
     itin?: string | null;
+    paychex_id?: string | null;
 };
 
 type EmployeeAddress = {
@@ -409,6 +410,12 @@ export default function Show() {
                                     ITIN:
                                 </span>{' '}
                                 {employee.identifiers?.itin ?? '—'}
+                            </div>
+                            <div>
+                                <span className="font-medium text-foreground">
+                                    PayChex ID:
+                                </span>{' '}
+                                {employee.identifiers?.paychex_id ?? '—'}
                             </div>
                         </div>
                     </CardContent>

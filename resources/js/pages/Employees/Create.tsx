@@ -556,6 +556,21 @@ export default function Create() {
                                         }
                                     />
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label>
+                                        PayChex ID
+                                        <OptionalMark />
+                                    </Label>
+                                    <Input name="identifiers[paychex_id]" />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'identifiers.paychex_id'
+                                            ]
+                                        }
+                                    />
+                                </div>
                             </div>
                         </section>
 

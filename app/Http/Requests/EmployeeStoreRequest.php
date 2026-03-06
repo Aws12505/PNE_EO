@@ -40,7 +40,7 @@ class EmployeeStoreRequest extends FormRequest
             'identifiers.social_security_number' => ['nullable', 'string', 'max:25'],
             'identifiers.national_id_number' => ['nullable', 'string', 'max:50'],
             'identifiers.itin' => ['nullable', 'string', 'max:50'],
-
+            'identifiers.paychex_id' => ['nullable', 'string', 'max:50'],
             // hasMany: contacts (DB enum + NOT NULL fields)
             'contacts' => ['nullable', 'array'],
             'contacts.*.id' => ['nullable', 'integer', 'exists:employee_contacts,id'],

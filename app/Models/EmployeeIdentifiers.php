@@ -16,6 +16,7 @@ class EmployeeIdentifiers extends Model
         'social_security_number',
         'national_id_number',
         'itin',
+        'paychex_id'
     ];
 
     public function employee(): BelongsTo

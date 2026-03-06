@@ -68,7 +68,7 @@ class EmployeesFullImport implements ToCollection, WithHeadingRow, SkipsEmptyRow
     {
         // --- REQUIRED CORE FIELDS ---
         $firstName = $this->trimOrNull($data['first_name'] ?? null);
-        $lastName  = $this->trimOrNull($data['last_name'] ?? null);
+        $lastName = $this->trimOrNull($data['last_name'] ?? null);
 
         if (!$firstName || !$lastName) {
             throw new \RuntimeException("first_name and last_name are required.");
@@ -173,14 +173,16 @@ class EmployeesFullImport implements ToCollection, WithHeadingRow, SkipsEmptyRow
         $ssn = $this->trimOrNull($data['social_security_number'] ?? null);
         $nid = $this->trimOrNull($data['national_id_number'] ?? null);
         $itin = $this->trimOrNull($data['itin'] ?? null);
+        $paychexId = $this->trimOrNull($data['paychex_id'] ?? null);
 
-        if ($ssn || $nid || $itin) {
+        if ($ssn || $nid || $itin || $paychexId) {
             $employee->identifiers()->updateOrCreate(
                 ['employee_id' => $employee->id],
                 [
                     'social_security_number' => $ssn,
                     'national_id_number' => $nid,
                     'itin' => $itin,
+                    'paychex_id' => $paychexId,
                 ]
             );
         } else {
@@ -214,7 +216,7 @@ class EmployeesFullImport implements ToCollection, WithHeadingRow, SkipsEmptyRow
 
         // --- address (present) ---
         $line1 = $this->trimOrNull($data['address_line1'] ?? null);
-        $city  = $this->trimOrNull($data['city'] ?? null);
+        $city = $this->trimOrNull($data['city'] ?? null);
         $state = $this->trimOrNull($data['state'] ?? null);
         $country = $this->trimOrNull($data['country'] ?? null);
         $postal = $this->trimOrNull($data['postal_code'] ?? null);
@@ -262,44 +264,56 @@ class EmployeesFullImport implements ToCollection, WithHeadingRow, SkipsEmptyRow
     private function isRowEmpty(array $data): bool
     {
         foreach ($data as $v) {
-            if (is_string($v) && trim($v) !== '') return false;
-            if (is_numeric($v)) return false;
-            if (is_bool($v) && $v === true) return false;
-            if ($v !== null && $v !== '') return false;
+            if (is_string($v) && trim($v) !== '')
+                return false;
+            if (is_numeric($v))
+                return false;
+            if (is_bool($v) && $v === true)
+                return false;
+            if ($v !== null && $v !== '')
+                return false;
         }
         return true;
     }
 
     private function trimOrNull($v): ?string
     {
-        if ($v === null) return null;
-        $s = trim((string)$v);
+        if ($v === null)
+            return null;
+        $s = trim((string) $v);
         return $s === '' ? null : $s;
     }
 
     private function intOrNull($v): ?int
     {
-        if ($v === null || $v === '') return null;
-        if (!is_numeric($v)) return null;
-        return (int)$v;
+        if ($v === null || $v === '')
+            return null;
+        if (!is_numeric($v))
+            return null;
+        return (int) $v;
     }
 
     private function boolOrNull($v): ?bool
     {
-        if ($v === null || $v === '') return null;
+        if ($v === null || $v === '')
+            return null;
 
-        if (is_bool($v)) return $v;
+        if (is_bool($v))
+            return $v;
 
-        $s = mb_strtolower(trim((string)$v));
-        if (in_array($s, ['1', 'true', 'yes', 'y'], true)) return true;
-        if (in_array($s, ['0', 'false', 'no', 'n'], true)) return false;
+        $s = mb_strtolower(trim((string) $v));
+        if (in_array($s, ['1', 'true', 'yes', 'y'], true))
+            return true;
+        if (in_array($s, ['0', 'false', 'no', 'n'], true))
+            return false;
 
         return null;
     }
 
     private function dateOrNull($v): ?string
     {
-        if ($v === null || $v === '') return null;
+        if ($v === null || $v === '')
+            return null;
 
         // Excel may pass Carbon/DateTime-like values depending on driver;
         // safest: try parse

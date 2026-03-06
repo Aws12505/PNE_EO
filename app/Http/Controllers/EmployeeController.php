@@ -209,6 +209,7 @@ class EmployeeController extends Controller
                 'social_security_number' => $payload['social_security_number'] ?? null,
                 'national_id_number' => $payload['national_id_number'] ?? null,
                 'itin' => $payload['itin'] ?? null,
+                'paychex_id' => $payload['paychex_id'] ?? null,
             ];
 
             if ($this->hasAnyFilled($payload)) {
@@ -239,7 +240,7 @@ class EmployeeController extends Controller
                 $payload = [
                     'contact_type' => $item['contact_type'] ?? null,
                     'contact_value' => $item['contact_value'] ?? null,
-                    'is_primary' => (bool)($item['is_primary'] ?? false),
+                    'is_primary' => (bool) ($item['is_primary'] ?? false),
                 ];
 
                 if (!empty($item['id'])) {
@@ -321,11 +322,13 @@ class EmployeeController extends Controller
     private function hasAnyFilled(array $payload): bool
     {
         foreach ($payload as $k => $v) {
-            if ($k === 'id') continue;
+            if ($k === 'id')
+                continue;
 
             // IMPORTANT: false should NOT count as "filled"
             if (is_bool($v)) {
-                if ($v === true) return true;
+                if ($v === true)
+                    return true;
                 continue;
             }
 
@@ -339,7 +342,8 @@ class EmployeeController extends Controller
                 return true;
             }
 
-            if ($v !== null && $v !== '') return true;
+            if ($v !== null && $v !== '')
+                return true;
         }
 
         return false;

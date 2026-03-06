@@ -37,6 +37,7 @@ type Identifiers = {
     social_security_number?: string | null;
     national_id_number?: string | null;
     itin?: string | null;
+    paychex_id?: string | null;
 };
 
 type ContactRow = {
@@ -668,6 +669,26 @@ export default function Edit() {
                                     <InputError
                                         message={
                                             (errors as any)['identifiers.itin']
+                                        }
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>
+                                        PayChex ID
+                                        <OptionalMark />
+                                    </Label>
+                                    <Input
+                                        name="identifiers[paychex_id]"
+                                        defaultValue={
+                                            employee.identifiers?.itin ?? ''
+                                        }
+                                    />
+                                    <InputError
+                                        message={
+                                            (errors as any)[
+                                                'identifiers.paychex_id'
+                                            ]
                                         }
                                     />
                                 </div>

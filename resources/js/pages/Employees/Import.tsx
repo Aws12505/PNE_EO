@@ -128,9 +128,9 @@ export default function Import() {
                         store_manual_id (optional), store_name (optional),
                         hiring_date, date_of_birth, gender, marital_status,
                         veteran_status, social_security_number,
-                        national_id_number, itin, work_email, work_phone,
-                        address_line1, address_line2, city, state, country,
-                        postal_code, tags
+                        national_id_number, itin, paychex_id, work_email,
+                        work_phone, address_line1, address_line2, city, state,
+                        country, postal_code, tags
                     </pre>
                 </div>
             </div>
