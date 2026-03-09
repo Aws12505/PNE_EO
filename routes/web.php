@@ -29,7 +29,7 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('expense-types/{expenseType}/restore', [ExpenseTypeController::class, 'restore'])
         ->name('expense-types.restore');
 
-    // Route::resource('stores', StoreController::class);
+    Route::resource('stores', StoreController::class);
 
     Route::prefix('employees/{employee}')->group(function () {
         Route::get('expenses/create', [EmployeeExpenseController::class, 'create'])->name('employees.expenses.create');
