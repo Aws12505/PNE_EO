@@ -139,7 +139,9 @@ export default function Index() {
 
                 <div className="flex items-center gap-2">
                     <Button variant="outline" asChild>
-                        <Link href={employeesImport.create().url}>Import</Link>
+                        <Link href={employeesImport.create().url}>
+                            Import/Export
+                        </Link>
                     </Button>
 
                     <Button asChild>

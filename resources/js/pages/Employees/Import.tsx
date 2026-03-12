@@ -77,6 +77,12 @@ export default function Import() {
                     </Button>
 
                     <Button variant="outline" asChild>
+                        <a href={employees.export().url}>
+                            Export Employees Data
+                        </a>
+                    </Button>
+
+                    <Button variant="outline" asChild>
                         <Link href={employees.index().url}>Back</Link>
                     </Button>
                 </div>

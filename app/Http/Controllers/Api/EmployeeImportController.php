@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Exports\EmployeesFullExport;
 
 class EmployeeImportController extends Controller
 {
@@ -133,5 +134,18 @@ class EmployeeImportController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+
+    public function export()
+    {
+        return Excel::download(
+            new EmployeesFullExport(),
+            'employees_export.csv',
+            \Maatwebsite\Excel\Excel::CSV,
+            [
+                'Content-Type' => 'text/csv; charset=UTF-8',
+            ]
+        );
     }
 }

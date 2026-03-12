@@ -22,7 +22,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/employees/import', [EmployeeImportController::class, 'store'])->name('employees.import.store');
     Route::get('/employees/import/template', [EmployeeImportController::class, 'template'])
         ->name('employees.import.template');
-
+    Route::get('/employees/export', [EmployeeImportController::class, 'export'])->name('employees.export');
     Route::resource('employees', EmployeeController::class);
 
     Route::resource('expense-types', ExpenseTypeController::class)->except(['show']);
